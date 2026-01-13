@@ -124,6 +124,38 @@ app.add_middleware(
 - **Backend**: `backend/debug.log` - 모든 백엔드 동작 로그
 - **Frontend**: `frontend/debug.log` - 모든 프론트엔드 동작 로그
 
+### 핫리로드 시 로그 초기화 (CRITICAL)
+**개발 서버 재시작(핫리로드) 시 기존 로그 파일을 삭제하고 새로 생성한다.**
+
+이유: 분석해야 할 로그 범위를 줄여 디버깅 효율을 높이기 위함
+
+**Backend (Python) - 서버 시작 시:**
+```python
+import os
+
+# 서버 시작 시 기존 로그 삭제
+LOG_FILE = 'debug.log'
+if os.path.exists(LOG_FILE):
+    os.remove(LOG_FILE)
+    print(f"[LOG] 기존 로그 파일 삭제: {LOG_FILE}")
+```
+
+**Frontend (JavaScript) - 앱 시작 시:**
+```javascript
+// App.jsx 또는 main.jsx 최상단
+if (import.meta.env.DEV) {
+  localStorage.removeItem('debug_logs');
+  console.log('[LOG] 기존 로그 초기화');
+}
+```
+
+**dev.sh 스크립트에서 처리:**
+```bash
+# 개발 서버 시작 전 로그 파일 삭제
+rm -f backend/debug.log frontend/debug.log
+echo "[LOG] 로그 파일 초기화 완료"
+```
+
 ### 로깅 필수 사항
 1) **상세한 로그 기록**
    - 모든 API 요청/응답
