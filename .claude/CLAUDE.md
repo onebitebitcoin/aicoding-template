@@ -262,3 +262,107 @@ export const ErrorAlert = ({ error }) => (
 4. **프로덕션 간소화**: 프로덕션에서는 민감 정보 숨김
 
 **중요**: 문제 해결을 위해 충분히 상세한 로그를 남기고, **사용자에게도 명확한 에러 메시지를 표시**하는 것이 필수입니다.
+
+---
+
+## Claude Code 사용 가이드 (비개발자용)
+
+이 템플릿은 비개발자도 Claude Code를 통해 프로젝트를 생성하고 배포할 수 있도록 설계되었습니다.
+
+### 프로젝트 시작하기
+
+**1. 프로젝트 생성**
+```
+"SPEC.md를 기반으로 프로젝트를 생성해줘"
+```
+- Claude Code가 frontend/, backend/ 폴더와 필요한 파일들을 자동 생성합니다.
+
+**2. 의존성 설치**
+```
+"의존성 설치해줘" 또는 "./install.sh 실행해줘"
+```
+
+**3. 개발 서버 실행**
+```
+"개발 서버 실행해줘" 또는 "./dev.sh 실행해줘"
+```
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API 문서: http://localhost:8000/docs
+
+**4. 테스트 실행**
+```
+"테스트 실행해줘" 또는 "./test.sh 실행해줘"
+```
+
+### Railway 배포
+
+**사전 준비** (최초 1회):
+1. Railway 계정 생성: https://railway.app
+2. Railway CLI 설치: `npm install -g @railway/cli`
+3. Railway 로그인: `railway login`
+
+**배포 요청**:
+```
+"Railway에 배포해줘"
+```
+
+Claude Code가 자동으로 수행하는 작업:
+1. 테스트 실행 (통과 확인)
+2. Git 커밋 (변경사항이 있는 경우)
+3. `railway up` 실행 (Docker 빌드 및 배포)
+4. 배포 URL 및 상태 확인
+
+### 문제 해결
+
+**배포 로그 확인**:
+```
+"배포 로그 확인해줘" 또는 "railway logs 실행해줘"
+```
+
+**배포 상태 확인**:
+```
+"배포 상태 확인해줘" 또는 "railway status 실행해줘"
+```
+
+**에러 발생 시**:
+```
+"에러 로그 확인해줘"
+"문제 원인 분석해줘"
+```
+
+### SPEC.md 커스터마이징
+
+새로운 프로젝트를 만들려면 SPEC.md 파일에서 다음을 수정하세요:
+
+1. **프로젝트 이름/설명**: 1.1 Purpose 섹션
+2. **데이터베이스 스키마**: 6. Database Schema 섹션
+3. **API 엔드포인트**: 5. API Design 섹션
+4. **UI 컴포넌트**: 8. Frontend Components 섹션
+
+수정 후 Claude Code에게 "SPEC.md를 기반으로 프로젝트를 생성해줘"라고 요청하면 됩니다.
+
+---
+
+## 배포 설정
+
+### Docker 기반 배포
+
+이 프로젝트는 Dockerfile을 사용하여 Railway에 배포됩니다:
+
+- **빌드**: Multi-stage Docker build
+  - Stage 1: Node.js로 Frontend 빌드
+  - Stage 2: Python으로 Backend 실행 + Frontend 정적 파일 서빙
+- **헬스체크**: `/health` 엔드포인트
+- **포트**: Railway가 자동으로 `PORT` 환경 변수 제공
+
+### 환경 변수 (Railway 대시보드에서 설정)
+
+**필수**:
+- `DATABASE_URL`: PostgreSQL 연결 URL (Railway가 자동 제공)
+- `SECRET_KEY`: 보안 키 (직접 설정)
+- `ENVIRONMENT`: production
+
+**선택**:
+- `LOG_LEVEL`: INFO (기본값)
+- `REDIS_URL`: Redis 연결 URL (캐싱 사용 시)
