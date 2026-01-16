@@ -85,10 +85,37 @@
 
 ## Workflow (필수)
 - 변경 사항이 생기면 아래 순서로 마무리한다.
-  1) 테스트 실행(프로젝트 표준 커맨드 사용)
-  2) PASS/FAIL 확인 후, FAIL이면 수정 → 재테스트 반복
-  3) PASS면 `git add` → `git commit` 수행
-  4) `git push`는 사용자가 명시적으로 요청할 때만 수행한다.
+  1) **Lint 체크 (테스트 전 필수)**
+     - Frontend (React): `npm run lint` (ESLint)
+     - Backend (FastAPI): `ruff check .` 또는 `flake8`
+     - 에러가 있으면 수정 후 다시 체크
+  2) 테스트 실행(프로젝트 표준 커맨드 사용)
+  3) PASS/FAIL 확인 후, FAIL이면 수정 → 재테스트 반복
+  4) PASS면 `git add` → `git commit` 수행
+  5) `git push`는 사용자가 명시적으로 요청할 때만 수행한다.
+
+### Lint 설정
+
+**Frontend (React) - ESLint**:
+```bash
+# 린트 체크
+npm run lint
+
+# 자동 수정
+npm run lint -- --fix
+```
+
+**Backend (FastAPI) - Ruff**:
+```bash
+# 린트 체크
+ruff check .
+
+# 자동 수정
+ruff check . --fix
+
+# 포맷팅
+ruff format .
+```
 
 ## Database & API Synchronization (CRITICAL)
 **스키마와 API는 항상 함께 업데이트되어야 한다.**
