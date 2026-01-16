@@ -90,9 +90,29 @@
      - Backend (FastAPI): `ruff check .` 또는 `flake8`
      - 에러가 있으면 수정 후 다시 체크
   2) 테스트 실행(프로젝트 표준 커맨드 사용)
-  3) PASS/FAIL 확인 후, FAIL이면 수정 → 재테스트 반복
-  4) PASS면 `git add` → `git commit` 수행
-  5) `git push`는 사용자가 명시적으로 요청할 때만 수행한다.
+  3) **테스트 결과를 테이블 형태로 출력 (필수)**
+  4) PASS/FAIL 확인 후, FAIL이면 수정 → 재테스트 반복
+  5) **PASS면 반드시 `git add` → `git commit` 수행 (절대 누락 금지)**
+  6) `git push`는 사용자가 명시적으로 요청할 때만 수행한다.
+
+### Commit 필수 (CRITICAL)
+**테스트 통과 후 commit을 절대 잊지 말 것!**
+- 작업 완료 + 테스트 PASS → 반드시 commit
+- commit 없이 다음 작업으로 넘어가지 말 것
+- 사용자가 commit 하지 말라고 명시적으로 요청한 경우에만 생략
+
+### 테스트 결과 출력 형식 (필수)
+테스트 수행 후 반드시 아래 형식으로 결과를 출력한다:
+
+```
+| 구분 | 결과 | 상세 |
+|------|------|------|
+| Frontend Lint | PASS/FAIL | 에러 수 또는 "OK" |
+| Backend Lint | PASS/FAIL | 에러 수 또는 "OK" |
+| Frontend Test | PASS/FAIL | 통과/전체 (예: 10/10) |
+| Backend Test | PASS/FAIL | 통과/전체 (예: 15/15) |
+| **최종 결과** | **PASS/FAIL** | - |
+```
 
 ### Lint 설정
 
