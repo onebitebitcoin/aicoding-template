@@ -80,6 +80,66 @@
 3. API 문서 (Swagger) 자동 반영 확인
 4. 테스트 코드 업데이트
 
+## Backend Development - 12-Factor App (CRITICAL)
+
+**Backend 개발 시 반드시 12-Factor App 방법론을 따라야 한다.**
+
+12-Factor App은 확장 가능하고 유지보수가 쉬운 SaaS 애플리케이션을 구축하기 위한 방법론이다.
+참고: https://12factor.net/
+
+### 12가지 원칙
+
+| # | 원칙 | 설명 | 적용 예시 |
+|---|------|------|----------|
+| 1 | **Codebase** | 버전 관리되는 하나의 코드베이스, 여러 배포 | Git으로 관리, dev/staging/prod 환경 분리 |
+| 2 | **Dependencies** | 의존성을 명시적으로 선언하고 격리 | `requirements.txt`, `pyproject.toml` 사용 |
+| 3 | **Config** | 설정을 환경 변수로 분리 | `.env` 파일, `os.getenv()` 사용 |
+| 4 | **Backing Services** | 백엔드 서비스를 연결된 리소스로 취급 | DB, Redis, S3를 URL로 연결 |
+| 5 | **Build, Release, Run** | 빌드/릴리스/실행 단계 엄격히 분리 | Docker 빌드 → 이미지 태깅 → 컨테이너 실행 |
+| 6 | **Processes** | 무상태(Stateless) 프로세스로 실행 | 세션은 Redis/DB에 저장, 로컬 파일 의존 금지 |
+| 7 | **Port Binding** | 포트 바인딩으로 서비스 노출 | `uvicorn app:app --port $PORT` |
+| 8 | **Concurrency** | 프로세스 모델로 수평 확장 | 워커 수 조절, 로드밸런서 사용 |
+| 9 | **Disposability** | 빠른 시작/종료로 견고성 확보 | graceful shutdown, 시그널 핸들링 |
+| 10 | **Dev/Prod Parity** | 개발/스테이징/프로덕션 환경 동일하게 유지 | Docker로 환경 통일, 같은 DB 종류 사용 |
+| 11 | **Logs** | 로그를 이벤트 스트림으로 취급 | stdout 출력, 로그 수집기가 처리 |
+| 12 | **Admin Processes** | 관리 작업을 일회성 프로세스로 실행 | 마이그레이션, 스크립트를 별도 명령으로 |
+
+### 필수 체크리스트
+
+```
+[ ] 모든 설정은 환경 변수로 관리 (하드코딩 금지)
+[ ] 의존성은 requirements.txt 또는 pyproject.toml에 명시
+[ ] 프로세스는 무상태로 유지 (로컬 파일 시스템 의존 금지)
+[ ] 로그는 stdout으로 출력 (파일 직접 쓰기는 개발 환경만)
+[ ] graceful shutdown 구현
+[ ] 개발/프로덕션 환경 차이 최소화
+```
+
+### FastAPI 적용 예시
+
+```python
+import os
+from fastapi import FastAPI
+
+# Config: 환경 변수로 설정 관리
+DATABASE_URL = os.getenv("DATABASE_URL")
+REDIS_URL = os.getenv("REDIS_URL")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+# Port Binding: 환경 변수로 포트 설정
+PORT = int(os.getenv("PORT", 8000))
+
+# Processes: 무상태 유지
+# ❌ 잘못된 예시 - 로컬 파일에 상태 저장
+# user_sessions = {}  # 메모리에 세션 저장
+
+# ✅ 올바른 예시 - 외부 서비스 사용
+# from redis import Redis
+# redis_client = Redis.from_url(REDIS_URL)
+```
+
+---
+
 ## Backend Configuration (CRITICAL)
 
 ### Allowed Hosts & CORS
