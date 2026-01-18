@@ -339,6 +339,118 @@ ruff check . --fix
 ruff format .
 ```
 
+## Database 개발 규칙 (CRITICAL)
+
+**Backend에서 데이터베이스 접근 시 반드시 ORM(SQLAlchemy)을 사용해야 한다.**
+
+### 원칙
+- Raw SQL 직접 작성 금지 (SQL Injection 방지)
+- SQLAlchemy ORM으로 모델 정의 및 쿼리 수행
+- 복잡한 쿼리도 ORM으로 작성 (필요시 `joinedload`, `subquery` 등 활용)
+
+### 모델 정의
+
+```python
+# backend/app/models/user.py
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from app.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # 관계 정의
+    posts = relationship("Post", back_populates="author")
+```
+
+### CRUD 작업
+
+```python
+# ✅ ORM 사용 (올바른 예시)
+from sqlalchemy.orm import Session
+from app.models import User
+
+# Create
+def create_user(db: Session, email: str, name: str) -> User:
+    user = User(email=email, name=name)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+# Read
+def get_user(db: Session, user_id: int) -> User | None:
+    return db.query(User).filter(User.id == user_id).first()
+
+# Update
+def update_user(db: Session, user_id: int, name: str) -> User | None:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.name = name
+        db.commit()
+        db.refresh(user)
+    return user
+
+# Delete
+def delete_user(db: Session, user_id: int) -> bool:
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+        return True
+    return False
+```
+
+### 잘못된 예시
+
+```python
+# ❌ Raw SQL 직접 사용 - SQL Injection 취약점!
+cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
+
+# ❌ 문자열 포매팅으로 쿼리 작성
+query = f"INSERT INTO users (name) VALUES ('{name}')"
+cursor.execute(query)
+```
+
+### 복잡한 쿼리
+
+```python
+# 조인 쿼리
+users_with_posts = (
+    db.query(User)
+    .options(joinedload(User.posts))
+    .filter(User.is_active == True)
+    .all()
+)
+
+# 집계 쿼리
+from sqlalchemy import func
+
+post_counts = (
+    db.query(User.id, func.count(Post.id).label("post_count"))
+    .join(Post)
+    .group_by(User.id)
+    .all()
+)
+
+# 서브쿼리
+subquery = db.query(Post.author_id).filter(Post.published == True).subquery()
+active_authors = db.query(User).filter(User.id.in_(subquery)).all()
+```
+
+### 체크리스트
+- [ ] 모든 DB 접근은 SQLAlchemy ORM을 통해 수행
+- [ ] Raw SQL 문자열 직접 작성하지 않음
+- [ ] 모델 클래스에 적절한 인덱스 설정
+- [ ] 관계(relationship)가 필요한 경우 명시적으로 정의
+
+---
+
 ## Database & API Synchronization (CRITICAL)
 **스키마와 API는 항상 함께 업데이트되어야 한다.**
 
