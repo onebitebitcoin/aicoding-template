@@ -179,22 +179,66 @@ aicoding-template/
 
 ---
 
-## 개발 서버 실행
+## 환경 설치 (install.sh)
 
-프로젝트 구현 후:
+**비개발자도 새 컴퓨터에서 바로 실행할 수 있습니다.**
 
 ```bash
-# 의존성 설치
 ./install.sh
+```
 
-# 개발 서버 실행
+### 지원 OS
+
+| OS | 패키지 매니저 | 자동 설치 |
+|----|-------------|----------|
+| macOS | Homebrew (없으면 자동 설치) | O |
+| Ubuntu/Debian | apt | O |
+| Windows (WSL) | apt | O |
+| RedHat/CentOS | dnf | O |
+
+### 자동 설치 항목
+
+| 도구 | 설명 |
+|------|------|
+| Node.js | v20 LTS (Frontend 빌드) |
+| Python | 3.x + pip + venv (Backend 실행) |
+| Git | 버전 관리 |
+
+### 설치 흐름
+
+```
+./install.sh 실행
+    │
+    ├── 1. OS 감지 (macOS/Ubuntu/Windows 등)
+    ├── 2. 패키지 매니저 확인/설치
+    ├── 3. Node.js 설치 (없으면)
+    ├── 4. Python 설치 (없으면)
+    ├── 5. Git 설치 (없으면)
+    ├── 6. Python 가상환경 생성
+    ├── 7. Backend 의존성 설치 (pip)
+    ├── 8. Frontend 의존성 설치 (npm)
+    └── 9. .env 파일 생성
+```
+
+---
+
+## 개발 서버 실행 (dev.sh)
+
+환경 설치 후:
+
+```bash
 ./dev.sh
 ```
 
-접속 주소:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API 문서 (Swagger): http://localhost:8000/docs
+Frontend와 Backend가 동시에 실행됩니다:
+
+| 서비스 | 주소 |
+|--------|------|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8000 |
+| API 문서 (Swagger) | http://localhost:8000/docs |
+
+종료: `Ctrl + C`
 
 ---
 
