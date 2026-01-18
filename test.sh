@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Bitcoin Cracker - Test Runner
+# AI Coding Template - Test Runner
 # 유닛 테스트, 통합 테스트, E2E 테스트를 실행합니다
 
 set -e
@@ -178,7 +178,7 @@ run_lint() {
 
 # 메인 로직
 echo "=========================================="
-echo "Bitcoin Cracker - Test Runner"
+echo "AI Coding Template - Test Runner"
 echo "=========================================="
 echo ""
 

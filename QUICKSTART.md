@@ -79,7 +79,7 @@ Claude Code가 자동으로:
 
 `SPEC.md` 파일을 열어서 다음을 변경하세요:
 
-1. **프로젝트 이름**: "Bitcoin Cracker" → 원하는 이름
+1. **프로젝트 이름**: "AI Coding Template" → 원하는 이름
 2. **프로젝트 설명**: 1.1 Purpose 섹션
 3. **데이터베이스 테이블**: 6. Database Schema 섹션
 4. **API 엔드포인트**: 5. API Design 섹션

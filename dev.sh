@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Bitcoin Cracker - Development Server
+# AI Coding Template - Development Server
 # 백엔드와 프론트엔드 개발 서버를 실행합니다
 
 set -e
@@ -113,7 +113,7 @@ start_frontend() {
 
 # 메인 로직
 echo "=========================================="
-echo "Bitcoin Cracker - Development Server"
+echo "AI Coding Template - Development Server"
 echo "=========================================="
 echo ""
 

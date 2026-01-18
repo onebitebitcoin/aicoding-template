@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Bitcoin Cracker - Installation Script
+# AI Coding Template - Installation Script
 # 프로젝트 의존성을 설치하고 환경을 설정합니다
 
 set -e  # 에러 발생 시 즉시 종료
 
 echo "=========================================="
-echo "Bitcoin Cracker - Installation"
+echo "AI Coding Template - Installation"
 echo "=========================================="
 echo ""
 

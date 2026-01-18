@@ -401,7 +401,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="Bitcoin Cracker API",
+    title="AI Coding Template API",
     description="Bitcoin 블록체인 분석 API",
     version="1.0.0"
 )
