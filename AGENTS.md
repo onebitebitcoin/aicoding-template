@@ -137,6 +137,73 @@
 7) 사용자 작업에는 성공/실패 메시지를 항상 노출할 것
    - 저장/추가/삭제/새로고침 등 주요 액션의 결과를 명확히 표시한다.
 
+## 의존성 관리 및 환경 구축 (CRITICAL)
+
+**개발 시작 전 반드시 `install.sh`를 실행하여 환경을 구축해야 한다.**
+
+### 개발 환경 구축 순서
+
+1. **install.sh 실행** (최초 1회 또는 의존성 변경 시)
+   ```bash
+   ./install.sh
+   ```
+2. **dev.sh 실행** (개발 서버 시작)
+   ```bash
+   ./dev.sh
+   ```
+
+### 새 패키지 설치 시 규칙
+
+**패키지를 설치하면 반드시 의존성 파일에 추가해야 한다.**
+
+| 환경 | 설치 명령 | 반영 파일 |
+|------|----------|----------|
+| Backend (Python) | `pip install 패키지명` | `backend/requirements.txt` |
+| Frontend (Node.js) | `npm install 패키지명` | `frontend/package.json` |
+
+### install.sh 유지 규칙
+
+install.sh는 다음을 수행해야 한다:
+- Python 가상환경 생성 및 활성화
+- `backend/requirements.txt` 패키지 설치
+- `frontend/package.json` 패키지 설치
+- 환경 변수 파일 생성 (`.env` 없을 경우)
+
+**install.sh 예시 구조**:
+```bash
+#!/bin/bash
+
+# Backend 설정
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Frontend 설정
+cd ../frontend
+npm install
+
+# 환경 변수 파일 생성
+cd ..
+if [ ! -f .env ]; then
+    cp .env.example .env
+    echo ".env 파일이 생성되었습니다. 필요한 값을 설정하세요."
+fi
+
+echo "설치 완료!"
+```
+
+### 체크리스트
+
+```
+[ ] 개발 시작 전 install.sh를 실행했는가?
+[ ] 새 패키지 설치 시 requirements.txt 또는 package.json에 추가했는가?
+[ ] install.sh 실행 시 모든 의존성이 설치되는가?
+[ ] 다른 개발자도 install.sh만 실행하면 환경 구축이 되는가?
+```
+
+---
+
 ## Workflow (필수)
 - 변경 사항이 생기면 아래 순서로 마무리한다.
   1) **Lint 체크 (테스트 전 필수)**
