@@ -152,6 +152,57 @@
    ./dev.sh
    ```
 
+### 새 패키지 설치 워크플로우 (CRITICAL)
+
+**새 패키지가 필요한 기능 구현 시 반드시 아래 순서를 따라야 한다.**
+
+코드에 import만 추가하고 패키지를 설치하지 않으면 **런타임 에러가 발생**한다.
+
+| 단계 | Backend (Python) | Frontend (Node.js) |
+|------|------------------|-------------------|
+| 1. 패키지 설치 | `pip install 패키지명` | `npm install 패키지명` |
+| 2. 의존성 파일 추가 | `backend/requirements.txt`에 추가 | 자동 반영 (`package.json`) |
+| 3. 코드 작성 | `import` 또는 `from ... import` | `import ... from '...'` |
+
+**예시: requests 패키지 사용**
+
+```bash
+# 1. 패키지 설치
+cd backend
+pip install requests
+
+# 2. requirements.txt에 추가
+echo "requests==2.31.0" >> requirements.txt
+```
+
+```python
+# 3. 코드에서 사용
+import requests
+
+response = requests.get("https://api.example.com")
+```
+
+**잘못된 예시**:
+```python
+# ❌ 패키지 설치 없이 import만 추가
+import pandas  # ModuleNotFoundError 발생!
+
+df = pandas.DataFrame()
+```
+
+**올바른 예시**:
+```bash
+# ✅ 먼저 설치
+pip install pandas
+# requirements.txt에 추가
+```
+```python
+# 그 다음 import
+import pandas
+
+df = pandas.DataFrame()
+```
+
 ### 새 패키지 설치 시 규칙
 
 **패키지를 설치하면 반드시 의존성 파일에 추가해야 한다.**
