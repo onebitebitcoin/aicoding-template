@@ -6,6 +6,91 @@
 
 ---
 
+## Quick Start
+
+**5단계로 나만의 웹 앱을 만들고 배포하세요!**
+
+### 1. 템플릿 다운로드
+
+```bash
+git clone https://github.com/your-repo/aicoding-template.git
+cd aicoding-template
+```
+
+### 2. 내 프로젝트로 수정
+
+`SPEC.md` 파일을 열어서 원하는 프로젝트로 수정하세요.
+(또는 기본 예시 프로젝트로 먼저 테스트해도 됩니다)
+
+### 3. 환경 설치 및 개발
+
+```bash
+# 모든 도구 자동 설치 (Node.js, Python, Git 등)
+./install.sh
+
+# Claude Code 실행
+claude
+
+# Claude Code에게 요청
+"프로젝트 구현해줘"
+```
+
+### 4. 개발 서버 확인
+
+```bash
+./dev.sh
+```
+
+브라우저에서 확인:
+- http://localhost:3000 (Frontend)
+- http://localhost:8000/docs (API 문서)
+
+### 5. 테스트 및 배포
+
+```bash
+# 테스트 실행
+./test.sh
+
+# Git 커밋 & 푸시
+git add .
+git commit -m "My first app"
+git push
+
+# Railway 배포
+railway login
+railway up
+```
+
+**끝! 나만의 웹 앱이 인터넷에 배포되었습니다.**
+
+---
+
+## 전체 워크플로우
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   1. git clone          템플릿 다운로드                          │
+│         ↓                                                       │
+│   2. SPEC.md 수정       원하는 프로젝트 정의                      │
+│         ↓                                                       │
+│   3. ./install.sh       Node.js, Python 등 자동 설치            │
+│         ↓                                                       │
+│   4. claude             Claude Code로 프로젝트 구현              │
+│         ↓                                                       │
+│   5. ./dev.sh           개발 서버 실행 및 확인                    │
+│         ↓                                                       │
+│   6. ./test.sh          린트 체크 및 테스트                       │
+│         ↓                                                       │
+│   7. git push           코드 저장                                │
+│         ↓                                                       │
+│   8. railway up         인터넷에 배포 완료!                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 이 템플릿의 특징
 
 ### 1. SPEC.md 기반 개발
