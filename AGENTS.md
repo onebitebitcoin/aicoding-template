@@ -524,6 +524,65 @@ active_authors = db.query(User).filter(User.id.in_(subquery)).all()
 
 ---
 
+## Database 마이그레이션 (CRITICAL)
+
+**DB 스키마 변경 시 반드시 마이그레이션을 수행해야 한다.**
+
+### 원칙
+- 모델(스키마) 변경 후 **반드시 마이그레이션 생성 및 적용**
+- 마이그레이션 없이 서버 실행 시 스키마 불일치로 에러 발생
+- Alembic 사용 권장
+
+### 마이그레이션 워크플로우
+
+| 단계 | 명령어 | 설명 |
+|------|--------|------|
+| 1. 모델 수정 | - | SQLAlchemy 모델 파일 수정 |
+| 2. 마이그레이션 생성 | `alembic revision --autogenerate -m "설명"` | 변경사항 감지하여 마이그레이션 파일 생성 |
+| 3. 마이그레이션 적용 | `alembic upgrade head` | DB에 변경사항 적용 |
+| 4. 확인 | `alembic current` | 현재 마이그레이션 상태 확인 |
+
+### 예시
+
+```bash
+# 1. 모델 수정 후 마이그레이션 생성
+cd backend
+alembic revision --autogenerate -m "add email column to users"
+
+# 2. 생성된 마이그레이션 파일 확인 (backend/alembic/versions/)
+# 자동 생성된 내용이 올바른지 검토
+
+# 3. 마이그레이션 적용
+alembic upgrade head
+
+# 4. 상태 확인
+alembic current
+```
+
+### Alembic 초기 설정 (최초 1회)
+
+```bash
+cd backend
+pip install alembic
+alembic init alembic
+
+# alembic.ini 수정: sqlalchemy.url 설정
+# alembic/env.py 수정: target_metadata 설정
+```
+
+### 주의사항
+- 마이그레이션 파일은 **반드시 Git에 커밋**
+- 프로덕션 배포 전 마이그레이션 테스트 필수
+- 롤백이 필요한 경우: `alembic downgrade -1`
+
+### 체크리스트
+- [ ] 모델 변경 후 마이그레이션 파일 생성했는가?
+- [ ] 마이그레이션 파일 내용을 검토했는가?
+- [ ] 로컬에서 마이그레이션 적용 및 테스트했는가?
+- [ ] 마이그레이션 파일을 Git에 커밋했는가?
+
+---
+
 ## Database & API Synchronization (CRITICAL)
 **스키마와 API는 항상 함께 업데이트되어야 한다.**
 
