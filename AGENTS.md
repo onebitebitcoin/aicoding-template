@@ -58,6 +58,79 @@
 
 **주의**: 불명확한 상태로 구현을 시작하면 나중에 대규모 수정이 필요할 수 있다. 먼저 질문하고 확인받는 것이 효율적이다.
 
+## Frontend 개발 규칙 (CRITICAL)
+
+### 새 페이지는 새 URL로 생성
+
+**새로운 페이지를 만들 때는 반드시 새로운 URL(라우트)을 생성해야 한다.**
+
+모달이나 조건부 렌더링으로 페이지를 대체하면 안 된다.
+
+| 상황 | 올바른 방법 | 잘못된 방법 |
+|------|------------|------------|
+| 상세 페이지 | `/users/:id` 라우트 생성 | 모달로 상세 정보 표시 |
+| 생성 페이지 | `/users/new` 라우트 생성 | 같은 페이지에서 폼 토글 |
+| 수정 페이지 | `/users/:id/edit` 라우트 생성 | 모달로 수정 폼 표시 |
+| 설정 페이지 | `/settings` 라우트 생성 | 드로어로 설정 표시 |
+
+**이유:**
+- 브라우저 뒤로가기/앞으로가기 지원
+- URL 공유 및 북마크 가능
+- SEO 최적화
+- 페이지 상태 관리 용이
+
+**React Router 예시:**
+
+```jsx
+// ✅ 올바른 예시 - 라우트로 페이지 분리
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/users" element={<UserListPage />} />
+        <Route path="/users/new" element={<UserCreatePage />} />
+        <Route path="/users/:id" element={<UserDetailPage />} />
+        <Route path="/users/:id/edit" element={<UserEditPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```
+
+```jsx
+// ❌ 잘못된 예시 - 모달로 페이지 대체
+function UserListPage() {
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  return (
+    <div>
+      <UserList onSelect={(user) => {
+        setSelectedUser(user);
+        setShowDetail(true);  // 모달로 표시 - 잘못됨!
+      }} />
+
+      {showDetail && (
+        <Modal>
+          <UserDetail user={selectedUser} />
+        </Modal>
+      )}
+    </div>
+  );
+}
+```
+
+**예외 (모달 사용 가능한 경우):**
+- 삭제 확인 다이얼로그
+- 간단한 알림/경고
+- 빠른 미리보기 (상세 페이지로 이동 링크 포함)
+
+---
+
 ## Writing / UI Guidelines
 1) 이모지를 사용하지 말고 아이콘을 사용할 것
    - 문서/설명에서 🎉 같은 이모지 금지
