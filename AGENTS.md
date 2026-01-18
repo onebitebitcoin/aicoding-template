@@ -202,6 +202,36 @@ echo "설치 완료!"
 [ ] 다른 개발자도 install.sh만 실행하면 환경 구축이 되는가?
 ```
 
+### Dockerfile과 패키지 관리
+
+**새 패키지 설치 시 Dockerfile 수정이 필요한가?**
+
+| 패키지 종류 | 수정 파일 | Dockerfile 수정 |
+|------------|----------|----------------|
+| Python (pip) | `backend/requirements.txt` | 불필요 |
+| Node.js (npm) | `frontend/package.json` | 불필요 |
+| 시스템 (apt) | `Dockerfile` | **필요** |
+
+**원리**:
+- Dockerfile은 `requirements.txt`와 `package.json`을 읽어서 패키지 설치
+- 따라서 의존성 파일만 업데이트하면 Docker 빌드 시 자동 반영
+
+**Dockerfile 수정이 필요한 경우** (시스템 레벨 의존성):
+```dockerfile
+# 예: 이미지 처리, DB 드라이버 등 시스템 라이브러리가 필요할 때
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \      # PostgreSQL 드라이버
+    libmagic1 \      # python-magic 라이브러리
+    ffmpeg \         # 영상 처리
+    && rm -rf /var/lib/apt/lists/*
+```
+
+**주의**: 시스템 패키지 추가 시 반드시 사용자에게 확인:
+```
+"이 기능을 위해 시스템 패키지 [패키지명]이 필요합니다.
+Dockerfile에 추가해도 될까요?"
+```
+
 ---
 
 ## Workflow (필수)
