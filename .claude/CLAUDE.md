@@ -680,6 +680,124 @@ Claude Code가 자동으로 수행하는 작업:
 
 ---
 
+## Railway 배포 전 체크리스트 (CRITICAL)
+
+**`git push` 또는 Railway 배포 요청 전에 반드시 아래 항목을 확인해야 한다.**
+
+확인되지 않은 항목이 있으면 **배포를 진행하지 말고 사용자에게 질문**하여 확인받아야 한다.
+
+### 필수 확인 항목
+
+#### 1. Backend 필수 구현 사항
+
+| 항목 | 설명 | 확인 방법 |
+|------|------|----------|
+| `/health` 엔드포인트 | Railway 헬스체크용 | `GET /health` 응답 확인 |
+| Static 파일 서빙 | Frontend 빌드 파일 서빙 | FastAPI StaticFiles 설정 |
+| PORT 환경변수 사용 | Railway가 주입하는 포트 | `os.getenv("PORT", 8000)` |
+| CORS 설정 | 프로덕션 origin 허용 | CORSMiddleware 설정 |
+
+**필수 코드 예시**:
+```python
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
+app = FastAPI()
+
+# Health check 엔드포인트 (필수)
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+# Static 파일 서빙 (Frontend 빌드 결과물)
+if os.path.exists("static"):
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # API 경로가 아닌 경우 index.html 반환 (SPA 지원)
+        if not full_path.startswith("api/"):
+            return FileResponse("static/index.html")
+```
+
+#### 2. Frontend 빌드 설정
+
+| 항목 | 설명 | 확인 방법 |
+|------|------|----------|
+| `npm run build` 성공 | 빌드 에러 없음 | dist/ 폴더 생성 확인 |
+| API URL 설정 | 프로덕션 API 경로 | 상대경로 또는 환경변수 |
+| 환경변수 | VITE_* 변수 설정 | .env.production 확인 |
+
+**프로덕션 API URL 설정**:
+```javascript
+// 상대 경로 사용 (권장)
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+// 또는 환경별 분기
+const API_URL = import.meta.env.PROD
+  ? '/api/v1'  // 프로덕션: 같은 도메인
+  : 'http://localhost:8000/api/v1';  // 개발: 로컬 백엔드
+```
+
+#### 3. Dockerfile 확인
+
+| 항목 | 설명 |
+|------|------|
+| Multi-stage 빌드 | Frontend 빌드 → Backend 실행 |
+| static/ 복사 | Frontend 빌드 결과물 복사 |
+| PORT 환경변수 | `${PORT:-8000}` 사용 |
+| HEALTHCHECK | `/health` 엔드포인트 호출 |
+
+#### 4. 환경변수 확인
+
+**Railway 대시보드에서 설정해야 할 변수**:
+```
+DATABASE_URL=postgresql://...  (Railway PostgreSQL 연결 시 자동)
+SECRET_KEY=your-secret-key-here
+ENVIRONMENT=production
+```
+
+### 체크리스트
+
+배포 전 아래 항목을 모두 확인:
+
+```
+[ ] Backend에 /health 엔드포인트가 구현되어 있는가?
+[ ] Backend에서 static/ 폴더의 Frontend 파일을 서빙하는가?
+[ ] Backend가 PORT 환경변수를 사용하는가?
+[ ] Frontend 빌드가 성공하는가? (npm run build)
+[ ] Frontend API URL이 프로덕션에 맞게 설정되어 있는가?
+[ ] Dockerfile이 올바르게 설정되어 있는가?
+[ ] railway.toml이 존재하는가?
+[ ] 필수 환경변수 목록이 문서화되어 있는가?
+```
+
+### 확인되지 않은 경우 질문 예시
+
+```
+"Railway 배포 전 확인이 필요합니다:
+
+1. Backend에 /health 엔드포인트가 구현되어 있지 않습니다.
+   → 구현해도 될까요?
+
+2. Frontend 빌드 파일을 서빙하는 코드가 없습니다.
+   → Backend에 static 파일 서빙 코드를 추가해도 될까요?
+
+3. 환경변수 SECRET_KEY가 설정되지 않았습니다.
+   → Railway 대시보드에서 설정하셨나요?"
+```
+
+### 배포 실패 시 확인 사항
+
+1. **빌드 실패**: `railway logs` 확인
+2. **헬스체크 실패**: `/health` 엔드포인트 응답 확인
+3. **502 에러**: Backend 시작 로그 확인, PORT 환경변수 사용 확인
+4. **404 에러**: Static 파일 서빙 설정 확인
+
+---
+
 ## samples 디렉토리 활용 (기능 테스트)
 
 **새로운 기능 추가 시 먼저 samples 디렉토리에서 독립적으로 테스트한다.**
