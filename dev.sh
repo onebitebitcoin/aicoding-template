@@ -29,6 +29,19 @@ error() {
     echo -e "${RED}✗${NC} $1"
 }
 
+# 함수: 포트 사용 중인 프로세스 종료
+kill_port() {
+    local PORT=$1
+    local PIDS=$(lsof -ti :$PORT 2>/dev/null)
+
+    if [ -n "$PIDS" ]; then
+        info "포트 $PORT 사용 중인 프로세스 발견: $PIDS"
+        echo "$PIDS" | xargs kill -9 2>/dev/null || true
+        success "포트 $PORT 프로세스 종료됨"
+        sleep 1
+    fi
+}
+
 # 함수: 서버 종료
 cleanup() {
     echo ""
@@ -56,6 +69,9 @@ trap cleanup INT TERM
 
 # 함수: 백엔드 서버 시작
 start_backend() {
+    # 기존 포트 사용 프로세스 종료
+    kill_port 8000
+
     info "백엔드 서버 시작 중..."
 
     if [ ! -d "backend" ]; then
@@ -91,6 +107,9 @@ start_backend() {
 
 # 함수: 프론트엔드 서버 시작
 start_frontend() {
+    # 기존 포트 사용 프로세스 종료
+    kill_port 3000
+
     info "프론트엔드 서버 시작 중..."
 
     if [ ! -d "frontend" ]; then
