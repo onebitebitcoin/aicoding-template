@@ -706,6 +706,142 @@ PORT = int(os.getenv("PORT", 8000))
 
 ---
 
+## Backend Refactoring - Unix Philosophy (CRITICAL)
+
+**백엔드 리팩토링 시 반드시 Unix Philosophy를 따라야 한다.**
+
+Unix Philosophy는 1969년 Ken Thompson이 제시한 소프트웨어 개발 철학으로, 50년이 지난 현재에도 유효한 원칙이다.
+참고: [Unix philosophy - Wikipedia](https://en.wikipedia.org/wiki/Unix_philosophy)
+
+### 핵심 원칙 (Peter H. Salus의 3가지 원칙)
+
+| # | 원칙 | 설명 |
+|---|------|------|
+| 1 | **Do One Thing Well** | 프로그램은 한 가지 일만 하고, 그것을 잘 해야 한다 |
+| 2 | **Work Together** | 프로그램들이 함께 동작하도록 설계한다 |
+| 3 | **Universal Interface** | 텍스트 스트림을 범용 인터페이스로 사용한다 |
+
+**DOTADIW (Do One Thing And Do It Well)** - Unix 커뮤니티에서 가장 널리 받아들여지는 원칙
+
+### Eric Raymond의 17가지 설계 규칙
+
+| 규칙 | 설명 | 적용 예시 |
+|------|------|----------|
+| **Modularity** | 깔끔한 인터페이스로 연결된 단순한 부품을 작성 | 함수/클래스를 작고 독립적으로 유지 |
+| **Clarity** | 명확함이 영리함보다 낫다 | 트릭보다 읽기 쉬운 코드 선호 |
+| **Composition** | 다른 프로그램과 연결될 수 있도록 설계 | API는 조합 가능하게 설계 |
+| **Separation** | 정책(policy)과 메커니즘(mechanism)을 분리 | 비즈니스 로직과 인프라 코드 분리 |
+| **Simplicity** | 단순하게 설계하고, 필요한 경우에만 복잡성 추가 | YAGNI 원칙 준수 |
+| **Parsimony** | 큰 프로그램은 다른 방법이 없을 때만 작성 | 작은 유틸리티 함수 선호 |
+| **Transparency** | 검사와 디버깅이 쉽도록 가시성 있게 설계 | 로깅, 상태 노출 |
+| **Robustness** | 견고함은 단순함과 투명함에서 나온다 | 예외 처리보다 예방적 설계 |
+| **Representation** | 지식을 데이터에 담아 로직을 단순하게 유지 | 설정 파일, 테이블 기반 로직 |
+| **Least Surprise** | 사용자가 예상하는 대로 동작 | 일관된 네이밍, 표준 패턴 사용 |
+| **Silence** | 할 말이 없으면 아무것도 출력하지 않음 | 성공 시 불필요한 메시지 제거 |
+| **Repair** | 실패할 때는 빠르고 시끄럽게 실패 | 조용한 실패 금지, 명확한 에러 |
+| **Economy** | 프로그래머의 시간은 비싸다, 기계 시간으로 절약 | 자동화, 코드 생성 활용 |
+| **Generation** | 손으로 코드 작성을 피하고 생성 프로그램 사용 | ORM, 코드 제너레이터 활용 |
+| **Optimization** | 작동하게 만든 후 최적화하라 | 조기 최적화 금지 |
+| **Diversity** | 모든 좋은 방법을 불신하라 | 단일 솔루션 강요 금지 |
+| **Extensibility** | 미래를 위해 설계하라 | 확장 가능한 인터페이스 |
+
+### 백엔드 리팩토링 적용 가이드
+
+#### 1. 함수/클래스 분리 (Do One Thing Well)
+```python
+# ❌ 잘못된 예시 - 여러 가지 일을 하는 함수
+def process_order(order_data):
+    # 유효성 검사
+    if not order_data.get('items'):
+        raise ValueError("No items")
+    # 가격 계산
+    total = sum(item['price'] * item['qty'] for item in order_data['items'])
+    # 할인 적용
+    if order_data.get('coupon'):
+        total *= 0.9
+    # DB 저장
+    db.save(order_data)
+    # 이메일 발송
+    send_email(order_data['email'], f"주문 완료: {total}원")
+    return total
+
+# ✅ 올바른 예시 - 각각 한 가지 일만 하는 함수들
+def validate_order(order_data: dict) -> None:
+    if not order_data.get('items'):
+        raise ValueError("No items")
+
+def calculate_total(items: list) -> int:
+    return sum(item['price'] * item['qty'] for item in items)
+
+def apply_discount(total: int, coupon: str | None) -> int:
+    if coupon:
+        return int(total * 0.9)
+    return total
+
+def save_order(order_data: dict) -> Order:
+    return db.save(order_data)
+
+def notify_customer(email: str, total: int) -> None:
+    send_email(email, f"주문 완료: {total}원")
+```
+
+#### 2. 모듈 분리 (Separation)
+```
+backend/
+├── app/
+│   ├── api/           # API 라우터 (정책)
+│   ├── services/      # 비즈니스 로직 (정책)
+│   ├── repositories/  # 데이터 접근 (메커니즘)
+│   ├── models/        # 데이터 모델 (표현)
+│   └── utils/         # 유틸리티 (메커니즘)
+```
+
+#### 3. 인터페이스 설계 (Composition)
+```python
+# ✅ 조합 가능한 인터페이스
+class OrderService:
+    def __init__(
+        self,
+        validator: OrderValidator,
+        calculator: PriceCalculator,
+        repository: OrderRepository,
+        notifier: Notifier
+    ):
+        self.validator = validator
+        self.calculator = calculator
+        self.repository = repository
+        self.notifier = notifier
+```
+
+### 리팩토링 체크리스트
+
+```
+[ ] 각 함수/클래스가 한 가지 일만 하는가? (Do One Thing Well)
+[ ] 함수 이름만 보고 무슨 일을 하는지 알 수 있는가? (Clarity)
+[ ] 비즈니스 로직과 인프라 코드가 분리되어 있는가? (Separation)
+[ ] 다른 모듈과 쉽게 조합할 수 있는가? (Composition)
+[ ] 불필요한 복잡성이 없는가? (Simplicity)
+[ ] 에러 발생 시 명확하게 실패하는가? (Repair)
+[ ] 테스트하기 쉬운 구조인가? (Transparency)
+```
+
+### 마이크로서비스와 Unix Philosophy
+
+Unix Philosophy의 "작고, 집중된 컴포넌트" 원칙은 현대의 **마이크로서비스 아키텍처**에 직접적인 영향을 주었다.
+
+| Unix Philosophy | 마이크로서비스 적용 |
+|-----------------|-------------------|
+| Do One Thing Well | 각 서비스는 하나의 비즈니스 기능만 담당 |
+| Work Together | API를 통한 서비스 간 통신 |
+| Text Streams | JSON/REST API를 범용 인터페이스로 사용 |
+
+**참고 자료**:
+- [Unix philosophy - Wikipedia](https://en.wikipedia.org/wiki/Unix_philosophy)
+- [The Art of Unix Programming - Eric Raymond](https://cscie28.dce.harvard.edu/reference/programming/unix-esr.html)
+- [17 Principles of Unix Software Design](https://paulvanderlaken.com/2019/09/17/17-principles-of-unix-software-design/)
+
+---
+
 ## Backend Configuration (CRITICAL)
 
 백엔드 개발 시 반드시 적용해야 할 설정들입니다.
