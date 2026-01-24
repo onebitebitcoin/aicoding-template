@@ -412,6 +412,271 @@ ruff check . --fix
 ruff format .
 ```
 
+## 테스트 구조 및 실행 (CRITICAL)
+
+**모든 테스트 코드는 `tests/` 디렉토리 아래에 모아서 관리한다.**
+
+### 디렉토리 구조
+
+```
+tests/
+├── test.sh                    # 통합 테스트 실행 스크립트
+├── backend/                   # Backend 테스트 (pytest)
+│   ├── conftest.py            # 공통 fixtures (DB 세션, 테스트 클라이언트 등)
+│   ├── test_api.py            # API 엔드포인트 테스트
+│   ├── test_services.py       # 서비스 로직 테스트
+│   └── test_models.py         # 모델/스키마 테스트
+└── frontend/                  # Frontend 테스트 (Vitest)
+    ├── setup.ts               # 테스트 환경 설정
+    ├── components/            # 컴포넌트 테스트
+    │   └── Button.test.tsx
+    └── hooks/                 # 커스텀 훅 테스트
+        └── useApi.test.ts
+```
+
+### 테스트 실행
+
+**통합 실행** (권장):
+```bash
+./tests/test.sh
+```
+
+**개별 실행**:
+```bash
+# Backend만
+./tests/test.sh --backend
+
+# Frontend만
+./tests/test.sh --frontend
+
+# Watch 모드 (개발 중)
+./tests/test.sh --watch
+
+# 커버리지 리포트
+./tests/test.sh --coverage
+```
+
+### test.sh 스크립트 구조
+
+```bash
+#!/bin/bash
+set -e
+
+# 색상 정의
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# 결과 변수
+BACKEND_RESULT="SKIP"
+FRONTEND_RESULT="SKIP"
+
+# 옵션 파싱
+RUN_BACKEND=true
+RUN_FRONTEND=true
+WATCH_MODE=false
+COVERAGE=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --backend) RUN_FRONTEND=false; shift ;;
+        --frontend) RUN_BACKEND=false; shift ;;
+        --watch) WATCH_MODE=true; shift ;;
+        --coverage) COVERAGE=true; shift ;;
+        *) shift ;;
+    esac
+done
+
+# Backend 테스트
+if [ "$RUN_BACKEND" = true ]; then
+    echo "Running Backend tests..."
+    cd backend
+    if [ "$COVERAGE" = true ]; then
+        pytest ../tests/backend -v --cov=app --cov-report=html && BACKEND_RESULT="PASS" || BACKEND_RESULT="FAIL"
+    else
+        pytest ../tests/backend -v && BACKEND_RESULT="PASS" || BACKEND_RESULT="FAIL"
+    fi
+    cd ..
+fi
+
+# Frontend 테스트
+if [ "$RUN_FRONTEND" = true ]; then
+    echo "Running Frontend tests..."
+    cd frontend
+    if [ "$WATCH_MODE" = true ]; then
+        npm run test -- --watch
+    elif [ "$COVERAGE" = true ]; then
+        npm run test -- --coverage && FRONTEND_RESULT="PASS" || FRONTEND_RESULT="FAIL"
+    else
+        npm run test && FRONTEND_RESULT="PASS" || FRONTEND_RESULT="FAIL"
+    fi
+    cd ..
+fi
+
+# 결과 출력
+echo ""
+echo "================================"
+echo "        테스트 결과"
+echo "================================"
+echo "| 구분 | 결과 |"
+echo "|------|------|"
+echo "| Backend  | $BACKEND_RESULT |"
+echo "| Frontend | $FRONTEND_RESULT |"
+echo "================================"
+
+# 최종 결과
+if [ "$BACKEND_RESULT" = "FAIL" ] || [ "$FRONTEND_RESULT" = "FAIL" ]; then
+    echo -e "${RED}최종 결과: FAIL${NC}"
+    exit 1
+else
+    echo -e "${GREEN}최종 결과: PASS${NC}"
+    exit 0
+fi
+```
+
+### 테스트 설정 파일
+
+**Backend (pyproject.toml)**:
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests/backend"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+```
+
+**Frontend (vitest.config.ts)**:
+```typescript
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/frontend/setup.ts'],
+    include: ['tests/frontend/**/*.test.{ts,tsx}'],
+    coverage: {
+      reporter: ['text', 'html'],
+      exclude: ['node_modules/', 'tests/'],
+    },
+  },
+});
+```
+
+### 테스트 작성 규칙
+
+1. **파일 명명**: `test_*.py` (Backend), `*.test.ts(x)` (Frontend)
+2. **함수 명명**: `test_기능_상황_예상결과` 형식
+   ```python
+   def test_create_user_with_valid_data_returns_201():
+       ...
+   ```
+3. **AAA 패턴**: Arrange(준비) → Act(실행) → Assert(검증)
+4. **독립성**: 각 테스트는 독립적으로 실행 가능해야 함
+5. **Fixtures 활용**: 공통 설정은 `conftest.py` 또는 `setup.ts`에 정의
+
+### Backend 테스트 예시 (pytest)
+
+```python
+# tests/backend/conftest.py
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.main import app
+from app.database import Base, get_db
+
+# 테스트용 DB
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+TestingSessionLocal = sessionmaker(bind=engine)
+
+@pytest.fixture(scope="function")
+def db():
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture(scope="function")
+def client(db):
+    def override_get_db():
+        yield db
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+```
+
+```python
+# tests/backend/test_api.py
+def test_health_check(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
+
+def test_create_user_with_valid_data(client):
+    response = client.post("/api/v1/users", json={
+        "email": "test@example.com",
+        "name": "Test User"
+    })
+    assert response.status_code == 201
+    assert response.json()["email"] == "test@example.com"
+```
+
+### Frontend 테스트 예시 (Vitest)
+
+```typescript
+// tests/frontend/setup.ts
+import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+```typescript
+// tests/frontend/components/Button.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Button } from '@/components/Button';
+
+describe('Button', () => {
+  it('renders with correct text', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+
+  it('calls onClick when clicked', () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    fireEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### 체크리스트
+
+```
+[ ] 모든 테스트 코드는 tests/ 디렉토리에 위치
+[ ] tests/test.sh로 전체 테스트 실행 가능
+[ ] Backend: pytest + conftest.py fixtures 설정
+[ ] Frontend: Vitest + setup.ts 설정
+[ ] 새 기능 추가 시 테스트 코드도 함께 작성
+[ ] 테스트 통과 후 커밋 진행
+```
+
+---
+
 ## Database 개발 규칙 (CRITICAL)
 
 **Backend에서 데이터베이스 접근 시 반드시 ORM(SQLAlchemy)을 사용해야 한다.**
