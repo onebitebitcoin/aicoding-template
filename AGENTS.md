@@ -93,6 +93,39 @@ git commit -m "feat: 프로젝트 초기 구현"
 
 **주의**: 불명확한 상태로 구현을 시작하면 나중에 대규모 수정이 필요할 수 있다. 먼저 질문하고 확인받는 것이 효율적이다.
 
+## Plan Mode 필수 (CRITICAL)
+
+**모든 구현 작업은 반드시 Plan Mode로 시작해야 한다.**
+
+### 원칙
+- 코드 작성 전에 **항상 Plan Mode를 사용**하여 계획을 먼저 수립한다.
+- 계획 없이 바로 구현하지 않는다.
+- 사용자의 승인을 받은 후에 구현을 시작한다.
+
+### Plan Mode 진입 시점
+- 새로운 기능 구현 요청을 받았을 때
+- 버그 수정이 복잡할 때
+- 리팩토링 작업을 수행할 때
+- 여러 파일을 수정해야 할 때
+
+### Plan Mode에서 수행할 작업
+1. **요구사항 분석**: 사용자 요청을 정확히 이해
+2. **영향 범위 파악**: 수정이 필요한 파일/모듈 식별
+3. **구현 계획 작성**: 단계별 작업 목록 작성
+4. **위험 요소 식별**: 잠재적 문제점 미리 파악
+5. **사용자 승인**: 계획을 사용자에게 제시하고 승인 요청
+
+### 예외 사항 (Plan Mode 생략 가능)
+- 단순 오타 수정
+- 한 줄 변경 수준의 사소한 수정
+- 사용자가 명시적으로 "바로 수정해줘"라고 요청한 경우
+
+### 체크리스트
+- [ ] Plan Mode로 진입했는가?
+- [ ] 구현 계획을 작성했는가?
+- [ ] 사용자 승인을 받았는가?
+- [ ] 승인 후 구현을 시작했는가?
+
 ## Frontend 개발 규칙 (CRITICAL)
 
 ### 새 페이지는 새 URL로 생성
@@ -291,6 +324,17 @@ function UserListPage() {
    - [ ] 텍스트 크기 최소 14px 이상 (가독성)
    - [ ] 버튼/링크 간격 충분한지 확인
 
+   **PC 레이아웃 고려사항 (추가)**:
+   - 넓은 화면에서 콘텐츠가 너무 퍼지지 않도록 max-width 설정
+   - 사이드바, 다중 컬럼 레이아웃 활용 가능
+   - 호버 상태 스타일 추가 (hover:bg-gray-100 등)
+   - 마우스 사용자를 위한 더 작은 클릭 타깃 허용
+
+   **사용자 요청 확인 (추가)**:
+   - 사용자의 UI 요청이 특정 화면에만 한정되면 반드시 되물을 것
+   - 질문 예시: "이 레이아웃을 모바일과 PC 양쪽에서 어떻게 보여줄까요?"
+   - 반응형 호환성을 사용자에게 확인받고 진행
+
 5) 시간/날짜는 항상 한국 시간(Asia/Seoul)을 기준으로 판단한다.
 
 6) fallback 더미 값 주입으로 흐름을 숨기지 말 것
@@ -299,6 +343,20 @@ function UserListPage() {
 
 7) 사용자 작업에는 성공/실패 메시지를 항상 노출할 것
    - 저장/추가/삭제/새로고침 등 주요 액션의 결과를 명확히 표시한다.
+
+8) **디자인 레퍼런스 확인 (CRITICAL)**
+   - UI 작업 전 `design/reference/` 폴더에 레퍼런스 이미지가 있는지 확인
+   - 이미지가 있으면 해당 스타일을 분석하여 적용
+   - 이미지가 없으면 사용자에게 디자인 방향을 질문:
+     ```
+     "design/reference 폴더에 레퍼런스 이미지가 없습니다.
+     어떤 스타일로 디자인할까요?
+     1. 깔끔한 미니멀 스타일
+     2. 금융 앱 스타일 (토스, 뱅크샐러드)
+     3. 기본 TailwindCSS 스타일
+     4. 직접 설명해주세요"
+     ```
+   - 레퍼런스 이미지 확인 후 UI 컴포넌트 개발 시작
 
 ## 의존성 관리 및 환경 구축 (CRITICAL)
 
@@ -501,6 +559,55 @@ ruff check . --fix
 # 포맷팅
 ruff format .
 ```
+
+## 새 기능 추가 시 테스트 필수 (CRITICAL)
+
+**새로운 기능을 추가할 때는 반드시 해당 기능에 대한 테스트 코드를 함께 작성해야 한다.**
+
+### 원칙
+- 기능 구현과 테스트 작성은 **하나의 작업 단위**로 취급한다.
+- 테스트 없이 기능만 추가하는 것은 **미완성 작업**으로 간주한다.
+- 테스트는 나중에 리팩토링이나 변경사항이 있을 때 **회귀 버그를 방지**한다.
+
+### 테스트 작성이 필수인 경우
+| 작업 유형 | 테스트 필수 여부 | 설명 |
+|----------|-----------------|------|
+| 새 API 엔드포인트 추가 | **필수** | 요청/응답, 에러 케이스 테스트 |
+| 새 서비스/비즈니스 로직 추가 | **필수** | 핵심 로직 단위 테스트 |
+| 새 컴포넌트 추가 | **필수** | 렌더링, 이벤트 핸들링 테스트 |
+| 새 유틸리티 함수 추가 | **필수** | 입출력 검증 테스트 |
+| 버그 수정 | **권장** | 버그 재발 방지 테스트 |
+| 단순 UI 스타일 변경 | 선택 | 스냅샷 테스트 고려 |
+
+### 테스트 작성 워크플로우
+1. **기능 구현**: 새 기능 코드 작성
+2. **테스트 작성**: 해당 기능에 대한 테스트 코드 작성
+3. **테스트 실행**: 모든 테스트 통과 확인
+4. **커밋**: 기능 코드와 테스트 코드를 함께 커밋
+
+### 테스트 커버리지 목표
+- **새 기능**: 최소 80% 커버리지 권장
+- **핵심 비즈니스 로직**: 100% 커버리지 권장
+- **엣지 케이스**: 경계값, 에러 상황 반드시 포함
+
+### 체크리스트
+```
+[ ] 새 기능에 대한 테스트 코드를 작성했는가?
+[ ] 성공 케이스와 실패 케이스를 모두 테스트했는가?
+[ ] 엣지 케이스(빈 값, 최대값, 잘못된 입력 등)를 테스트했는가?
+[ ] 테스트가 독립적으로 실행 가능한가?
+[ ] 테스트 이름이 무엇을 테스트하는지 명확히 설명하는가?
+```
+
+### 테스트 없이 기능을 추가하려는 경우
+사용자가 "테스트 없이 빠르게 구현해줘"라고 요청하더라도:
+1. 테스트 없이 구현할 경우의 위험성을 설명
+2. 최소한의 테스트라도 추가할 것을 권장
+3. 사용자가 명시적으로 거부할 경우에만 생략
+
+**주의**: 테스트 없는 코드는 **기술 부채**가 된다. 나중에 수정할 때 예상치 못한 버그가 발생할 수 있다.
+
+---
 
 ## 테스트 구조 및 실행 (CRITICAL)
 
@@ -1284,6 +1391,58 @@ CORS가 올바르게 설정되었는지 확인:
 
 ---
 
+### Trailing Slash 통일 (CRITICAL)
+**Frontend와 Backend에서 URL trailing slash를 반드시 통일해야 한다.**
+
+`/api/users`와 `/api/users/`는 다른 URL로 처리될 수 있어 404 에러의 원인이 됨.
+
+**규칙: Trailing Slash 없이 통일**
+
+```
+✅ 올바른 예시:
+/api/v1/portfolio/summary
+/api/v1/trades
+/api/v1/stocks/AAPL
+
+❌ 잘못된 예시:
+/api/v1/portfolio/summary/
+/api/v1/trades/
+/api/v1/stocks/AAPL/
+```
+
+**Backend (FastAPI) 설정:**
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+# Trailing slash redirect 비활성화
+app.router.redirect_slashes = False
+```
+
+**Frontend (Axios) 설정:**
+```javascript
+// API 호출 시 trailing slash 제거
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+});
+
+// URL 정규화 (trailing slash 제거)
+api.interceptors.request.use((config) => {
+  if (config.url && config.url.endsWith('/')) {
+    config.url = config.url.slice(0, -1);
+  }
+  return config;
+});
+```
+
+**체크리스트:**
+- [ ] Backend API 엔드포인트에 trailing slash 없음
+- [ ] Frontend API 호출 URL에 trailing slash 없음
+- [ ] SPEC.md API Design 섹션 URL 형식 통일
+
+---
+
 ## Git Rules
 4) git commit message는 알아서 만들 것
    - 변경 내용 기반으로 명확하고 간결한 메시지를 자동 생성한다.
@@ -1299,6 +1458,38 @@ CORS가 올바르게 설정되었는지 확인:
 ### 로그 파일 위치
 - **Backend**: `backend/debug.log`
 - **Frontend**: `frontend/debug.log`
+
+### 핫리로드 시 로그 초기화 (CRITICAL)
+**개발 서버 재시작(핫리로드) 시 기존 로그 파일을 삭제하고 새로 생성한다.**
+
+이유: 분석해야 할 로그 범위를 줄여 디버깅 효율을 높이기 위함
+
+**Backend (Python) - 서버 시작 시:**
+```python
+import os
+
+# 서버 시작 시 기존 로그 삭제
+LOG_FILE = 'debug.log'
+if os.path.exists(LOG_FILE):
+    os.remove(LOG_FILE)
+    print(f"[LOG] 기존 로그 파일 삭제: {LOG_FILE}")
+```
+
+**Frontend (JavaScript) - 앱 시작 시:**
+```javascript
+// App.jsx 또는 main.jsx 최상단
+if (import.meta.env.DEV) {
+  localStorage.removeItem('debug_logs');
+  console.log('[LOG] 기존 로그 초기화');
+}
+```
+
+**dev.sh 스크립트에서 처리:**
+```bash
+# 개발 서버 시작 전 로그 파일 삭제
+rm -f backend/debug.log frontend/debug.log
+echo "[LOG] 로그 파일 초기화 완료"
+```
 
 ### 로깅 원칙
 1) **상세한 로그 기록 필수**
@@ -1848,6 +2039,110 @@ function MyComponent() {
 ---
 
 **중요**: 디버깅을 위해 충분히 상세한 로그를 남기는 것은 필수입니다. 로그가 부족하면 문제 해결이 어려우므로 항상 주요 동작에 대한 로그를 기록하세요. **또한 에러 발생 시 사용자에게도 명확한 에러 메시지를 보여주어야 합니다.**
+
+---
+
+## Claude Code 사용 가이드 (비개발자용)
+
+이 템플릿은 비개발자도 Claude Code를 통해 프로젝트를 생성하고 배포할 수 있도록 설계되었습니다.
+
+### 프로젝트 시작하기
+
+**1. 프로젝트 생성**
+```
+"SPEC.md를 기반으로 프로젝트를 생성해줘"
+```
+- Claude Code가 frontend/, backend/ 폴더와 필요한 파일들을 자동 생성합니다.
+
+**2. 의존성 설치**
+```
+"의존성 설치해줘" 또는 "./install.sh 실행해줘"
+```
+
+**3. 개발 서버 실행**
+```
+"개발 서버 실행해줘" 또는 "./dev.sh 실행해줘"
+```
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API 문서: http://localhost:8000/docs
+
+**4. 테스트 실행**
+```
+"테스트 실행해줘" 또는 "./test.sh 실행해줘"
+```
+
+### Railway 배포
+
+**사전 준비** (최초 1회):
+1. Railway 계정 생성: https://railway.app
+2. Railway CLI 설치: `npm install -g @railway/cli`
+3. Railway 로그인: `railway login`
+
+**배포 요청**:
+```
+"Railway에 배포해줘"
+```
+
+Claude Code가 자동으로 수행하는 작업:
+1. 테스트 실행 (통과 확인)
+2. Git 커밋 (변경사항이 있는 경우)
+3. `railway up` 실행 (Docker 빌드 및 배포)
+4. 배포 URL 및 상태 확인
+
+### 문제 해결
+
+**배포 로그 확인**:
+```
+"배포 로그 확인해줘" 또는 "railway logs 실행해줘"
+```
+
+**배포 상태 확인**:
+```
+"배포 상태 확인해줘" 또는 "railway status 실행해줘"
+```
+
+**에러 발생 시**:
+```
+"에러 로그 확인해줘"
+"문제 원인 분석해줘"
+```
+
+### SPEC.md 커스터마이징
+
+새로운 프로젝트를 만들려면 SPEC.md 파일에서 다음을 수정하세요:
+
+1. **프로젝트 이름/설명**: 1.1 Purpose 섹션
+2. **데이터베이스 스키마**: 6. Database Schema 섹션
+3. **API 엔드포인트**: 5. API Design 섹션
+4. **UI 컴포넌트**: 8. Frontend Components 섹션
+
+수정 후 Claude Code에게 "SPEC.md를 기반으로 프로젝트를 생성해줘"라고 요청하면 됩니다.
+
+---
+
+## 배포 설정
+
+### Docker 기반 배포
+
+이 프로젝트는 Dockerfile을 사용하여 Railway에 배포됩니다:
+
+- **빌드**: Multi-stage Docker build
+  - Stage 1: Node.js로 Frontend 빌드
+  - Stage 2: Python으로 Backend 실행 + Frontend 정적 파일 서빙
+- **헬스체크**: `/health` 엔드포인트
+- **포트**: Railway가 자동으로 `PORT` 환경 변수 제공
+
+### 환경 변수 (Railway 대시보드에서 설정)
+
+**필수**:
+- `DATABASE_URL`: PostgreSQL 연결 URL (Railway가 자동 제공)
+- `SECRET_KEY`: 보안 키 (직접 설정)
+- `ENVIRONMENT`: production
+
+**선택**:
+- `LOG_LEVEL`: INFO (기본값)
+- `REDIS_URL`: Redis 연결 URL (캐싱 사용 시)
 
 ---
 
